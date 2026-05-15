@@ -1,0 +1,148 @@
+<!--Il browser usa fetch() per chiamare le API del backend Java e aggiornare il DOM con i dati JSON. 
+//fetch() è l’approccio standard lato browser per fare richieste HTTP asincrone al server e ricevere risposte JSON. -->
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blackjack V3</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f1115;
+      color: #f5f5f5;
+      margin: 0;
+      padding: 30px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #171a21;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.35);
+    }
+
+    h1 {
+      margin-top: 0;
+      text-align: center;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: #2d6cdf;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background: #1f57b8;
+    }
+
+    .panel {
+      background: #20242c;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .message {
+      font-size: 18px;
+      margin-top: 20px;
+      color: #ffd166;
+    }
+
+    .small {
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Blackjack V3</h1>
+
+    <div class="buttons">
+      <button onclick="startGame()">Start</button>
+      <button onclick="hit()">Hit</button>
+      <button onclick="stand()">Stand</button>
+      <button onclick="loadState()">Refresh</button>
+    </div>
+
+    <div class="panel">
+      <h3>Giocatore</h3>
+      <div id="playerCards">Carte: -</div>
+      <div id="playerValue">Totale: -</div>
+    </div>
+
+    <div class="panel">
+      <h3>Dealer</h3>
+      <div id="dealerCards">Carte: -</div>
+      <div id="dealerValue">Totale: -</div>
+      <div id="dealerVisible" class="small">Carta visibile: -</div>
+    </div>
+
+    <div id="message" class="message">Premi Start per iniziare.</div>
+  </div>
+
+  <script>
+    async function callApi(url, method = "GET") {
+      const response = await fetch(url, { method });
+      const data = await response.json();
+      updateUI(data);
+    }
+
+    function updateUI(data) {
+      document.getElementById("playerCards").textContent =
+        "Carte: " + (data.playerCards?.join(", ") || "-");
+
+      document.getElementById("playerValue").textContent =
+        "Totale: " + (data.playerValue ?? "-");
+
+      const dealerCards = data.dealerCards && data.dealerCards.length > 0
+        ? data.dealerCards.join(", ")
+        : "-";
+
+      document.getElementById("dealerCards").textContent =
+        "Carte: " + dealerCards;
+
+      document.getElementById("dealerValue").textContent =
+        "Totale: " + (data.dealerValue ?? "-");
+
+      document.getElementById("dealerVisible").textContent =
+        "Carta visibile: " + (data.dealerVisibleCard || "-");
+
+      document.getElementById("message").textContent =
+        data.error ? ("Errore: " + data.error) : (data.message || "");
+    }
+
+    async function startGame() {
+      await callApi("/api/game/start", "POST");
+    }
+
+    async function hit() {
+      await callApi("/api/game/hit", "POST");
+    }
+
+    async function stand() {
+      await callApi("/api/game/stand", "POST");
+    }
+
+    async function loadState() {
+      await callApi("/api/game/state", "GET");
+    }
+  </script>
+</body>
+</html>

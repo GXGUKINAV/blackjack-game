@@ -36,24 +36,24 @@ public class ServerMain {
     }
 
     private static void handleIndex(HttpExchange exchange) throws IOException {
-        if (!exchange.getRequestMethod().equalsIgnoreCase("GET")) {
-            sendResponse(exchange, 405, "Metodo non consentito", "text/plain");
-            return;
-        }
-
-        byte[] fileBytes = Files.readAllBytes(Paths.get("web/index.html"));
-        exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
-        exchange.sendResponseHeaders(200, fileBytes.length);
-
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(fileBytes);
-        }
+    if (!exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+        sendResponse(exchange, 405, "Metodo non consentito", "text/plain");
+        return;
     }
+
+    byte[] fileBytes = Files.readAllBytes(Paths.get("Blackjack/web/index.html"));
+    exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+    exchange.sendResponseHeaders(200, fileBytes.length);
+
+    try (OutputStream os = exchange.getResponseBody()) {
+        os.write(fileBytes);
+    }
+}
 
     private static void handleStaticAssets(HttpExchange exchange) throws IOException {
         String requestPath = exchange.getRequestURI().getPath();
         String relativePath = requestPath.replaceFirst("/assets/", "");
-        java.nio.file.Path filePath = Paths.get("web/assets", relativePath);
+        java.nio.file.Path filePath = Paths.get("Blackjack/web/assets", relativePath);
 
         if (!Files.exists(filePath) || Files.isDirectory(filePath)) {
             sendResponse(exchange, 404, "File non trovato", "text/plain");

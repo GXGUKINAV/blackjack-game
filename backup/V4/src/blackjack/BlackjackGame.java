@@ -137,17 +137,10 @@ public class BlackjackGame {
             state.setDealerCards(dealerCards);
             state.setDealerCardImages(dealerCardImages);
             state.setDealerValue(dealerHand.getValue());
-            state.setDealerVisibleCard("");
-            state.setDealerVisibleCardImage("");
         } else {
-            Card visibleDealerCard = dealerHand.getCards().get(0);
-
             state.setDealerCards(List.of("Carta coperta"));
-            state.setDealerCardImages(List.of("/assets/cards/back.png"));
+            state.setDealerCardImages(List.of("/assets/back_side.png"));
             state.setDealerValue(0);
-
-            state.setDealerVisibleCard(visibleDealerCard.getDisplayName());
-            state.setDealerVisibleCardImage(visibleDealerCard.getImagePath());
         }
 
         return state;

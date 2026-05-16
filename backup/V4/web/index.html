@@ -75,25 +75,24 @@
     }
 
     .card {
-      min-width: 88px;
-      min-height: 120px;
-      border-radius: 8px;
-      background: #f7f7f7;
-      color: #111;
+      width: 90px;
+      height: 126px;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      text-align: center;
-      padding: 8px;
-      gap: 6px;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+      background: #f3f3f3;
+      padding: 6px;
+      border: none;
+      border-radius: 6px;
+      box-shadow: none;
+      overflow: hidden;
     }
 
     .card-image {
-      width: 72px;
-      height: auto;
-      border-radius: 6px;
+      width: 83px;
+      height: 119px;
+      object-fit: contain;
+      border-radius: 3px;
       display: block;
     }
 
@@ -238,7 +237,6 @@
             <div class="stack-card"></div>
           </div>
         </div>
-        <div class="meta-text" id="dealerVisible">Carta visibile: -</div>
       </section>
 
       <section class="zone" id="playerZone">
@@ -290,7 +288,7 @@
 
         if (isBackCard) {
           card.className = "card back";
-          card.textContent = "COPERTA";
+          card.textContent = "";
           container.appendChild(card);
           return;
         }
@@ -303,7 +301,7 @@
         img.className = "card-image";
 
         img.onerror = function () {
-          card.textContent = label;
+          card.textContent = "";
         };
 
         card.appendChild(img);
@@ -318,8 +316,7 @@
       document.getElementById("playerValue").textContent = state.playerValue ?? 0;
       document.getElementById("dealerValue").textContent =
         state.gameOver ? (state.dealerValue ?? 0) : "?";
-      document.getElementById("dealerVisible").textContent =
-        "Carta visibile: " + (state.dealerVisibleCard || "-");
+      
       document.getElementById("message").textContent =
         state.message || "Nessun messaggio.";
     }

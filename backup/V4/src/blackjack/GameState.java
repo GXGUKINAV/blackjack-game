@@ -10,9 +10,6 @@ public class GameState {
     private List<String> playerCardImages = new ArrayList<>();
     private List<String> dealerCardImages = new ArrayList<>();
 
-    private String dealerVisibleCard = "";
-    private String dealerVisibleCardImage = "";
-
     private int playerValue = 0;
     private int dealerValue = 0;
     private boolean gameOver = false;
@@ -48,22 +45,6 @@ public class GameState {
 
     public void setDealerCardImages(List<String> dealerCardImages) {
         this.dealerCardImages = dealerCardImages;
-    }
-
-    public String getDealerVisibleCard() {
-        return dealerVisibleCard;
-    }
-
-    public void setDealerVisibleCard(String dealerVisibleCard) {
-        this.dealerVisibleCard = dealerVisibleCard;
-    }
-
-    public String getDealerVisibleCardImage() {
-        return dealerVisibleCardImage;
-    }
-
-    public void setDealerVisibleCardImage(String dealerVisibleCardImage) {
-        this.dealerVisibleCardImage = dealerVisibleCardImage;
     }
 
     public int getPlayerValue() {

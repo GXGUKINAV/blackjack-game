@@ -170,8 +170,6 @@ public class ServerMain {
         + "\"dealerCards\":" + toJsonArray(state.getDealerCards()) + ","
         + "\"playerCardImages\":" + toJsonArray(state.getPlayerCardImages()) + ","
         + "\"dealerCardImages\":" + toJsonArray(state.getDealerCardImages()) + ","
-        + "\"dealerVisibleCard\":\"" + escapeJson(state.getDealerVisibleCard()) + "\","
-        + "\"dealerVisibleCardImage\":\"" + escapeJson(state.getDealerVisibleCardImage()) + "\","
         + "\"playerValue\":" + state.getPlayerValue() + ","
         + "\"dealerValue\":" + state.getDealerValue() + ","
         + "\"gameOver\":" + state.isGameOver() + ","

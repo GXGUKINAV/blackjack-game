@@ -6,7 +6,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Blackjack V3.2.1</title>
+  <title>Blackjack V4.0</title>
   <style>
     * {
       box-sizing: border-box;
@@ -75,18 +75,33 @@
     }
 
     .card {
-      min-width: 88px;
-      height: 120px;
-      border-radius: 8px;
-      background: #f7f7f7;
-      color: #111;
+      width: 90px;
+      height: 126px;
       display: flex;
       align-items: center;
       justify-content: center;
-      text-align: center;
-      padding: 8px;
-      font-weight: bold;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+      background: #f3f3f3;
+      padding: 6px;
+      border: none;
+      border-radius: 6px;
+      box-shadow: none;
+      overflow: hidden;
+    }
+
+    .card-image {
+      width: 83px;
+      height: 119px;
+      object-fit: contain;
+      border-radius: 3px;
+      display: block;
+    }
+
+    #dealerCardsArea .meta-text,
+    #playerCardsArea .meta-text {
+      font-size: 11px;
+      line-height: 1.2;
+      color: #111;
+      opacity: 0.9;
     }
 
     .card.back {
@@ -203,7 +218,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Blackjack V3.2.1</h1>
+    <h1>Blackjack V4.0</h1>
 
     <div class="table-layout">
       <section class="zone" id="dealerZone">
@@ -222,7 +237,6 @@
             <div class="stack-card"></div>
           </div>
         </div>
-        <div class="meta-text" id="dealerVisible">Carta visibile: -</div>
       </section>
 
       <section class="zone" id="playerZone">
@@ -249,46 +263,62 @@
   </div>
 
   <script>
-    function renderCards(containerId, cards, hidden = false) {
+    function renderCards(containerId, imagePaths = [], labels = []) {
       const container = document.getElementById(containerId);
+      if (!container) return;
+
       container.innerHTML = "";
 
-      if (!cards || cards.length === 0) {
-        container.innerHTML = '<div class="card">-</div>';
+      if (!imagePaths.length) {
+        const empty = document.createElement("div");
+        empty.className = "card";
+        empty.textContent = "-";
+        container.appendChild(empty);
         return;
       }
 
-      cards.forEach(cardText => {
+      imagePaths.forEach((src, index) => {
+        const label = labels[index] || "-";
+        const isBackCard =
+          label === "Carta coperta" ||
+          src.includes("back.png") ||
+          src.includes("back_side.png");
+
         const card = document.createElement("div");
-        const isBack = hidden || cardText === "Carta coperta";
-        card.className = isBack ? "card back" : "card";
-        card.textContent = isBack ? "" : cardText;
+
+        if (isBackCard) {
+          card.className = "card back";
+          card.textContent = "";
+          container.appendChild(card);
+          return;
+        }
+
+        card.className = "card";
+
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = label;
+        img.className = "card-image";
+
+        img.onerror = function () {
+          card.textContent = "";
+        };
+
+        card.appendChild(img);
         container.appendChild(card);
       });
     }
 
-    function updateUI(data) {
-      if (data.error) {
-        document.getElementById("message").textContent = "Errore: " + data.error;
-        return;
-      }
+    function updateUI(state) {
+      renderCards("playerCardsArea", state.playerCardImages || [], state.playerCards || []);
+      renderCards("dealerCardsArea", state.dealerCardImages || [], state.dealerCards || []);
 
-      renderCards("playerCardsArea", data.playerCards, false);
-
-      const dealerHidden = !data.gameOver;
-      if (dealerHidden) {
-        const visible = data.dealerVisibleCard ? [data.dealerVisibleCard, "Carta coperta"] : ["Carta coperta"];
-        renderCards("dealerCardsArea", visible, false);
-      } else {
-        renderCards("dealerCardsArea", data.dealerCards, false);
-      }
-
-      document.getElementById("playerValue").textContent = data.playerValue ?? 0;
-      document.getElementById("dealerValue").textContent = data.gameOver ? (data.dealerValue ?? 0) : "?";
-      document.getElementById("dealerVisible").textContent =
-        "Carta visibile: " + (data.dealerVisibleCard || "-");
-
-      document.getElementById("message").textContent = data.message || "";
+      document.getElementById("playerValue").textContent = state.playerValue ?? 0;
+      document.getElementById("dealerValue").textContent =
+        state.gameOver ? (state.dealerValue ?? 0) : "?";
+      
+      document.getElementById("message").textContent =
+        state.message || "Nessun messaggio.";
     }
 
     async function callApi(url, method = "GET") {

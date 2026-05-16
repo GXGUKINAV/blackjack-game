@@ -109,27 +109,38 @@ public class BlackjackGame {
 
         List<String> playerCards = playerHand.getCards()
                 .stream()
-                .map(Card::toString)
+                .map(Card::getDisplayName)
                 .collect(Collectors.toList());
 
-        List<String> dealerCards = dealerHand.getCards()
+        List<String> playerCardImages = playerHand.getCards()
                 .stream()
-                .map(Card::toString)
+                .map(Card::getImagePath)
                 .collect(Collectors.toList());
 
         state.setPlayerCards(playerCards);
+        state.setPlayerCardImages(playerCardImages);
         state.setPlayerValue(playerHand.getValue());
         state.setGameOver(gameOver);
         state.setMessage(message);
 
         if (revealDealer) {
+            List<String> dealerCards = dealerHand.getCards()
+                    .stream()
+                    .map(Card::getDisplayName)
+                    .collect(Collectors.toList());
+
+            List<String> dealerCardImages = dealerHand.getCards()
+                    .stream()
+                    .map(Card::getImagePath)
+                    .collect(Collectors.toList());
+
             state.setDealerCards(dealerCards);
+            state.setDealerCardImages(dealerCardImages);
             state.setDealerValue(dealerHand.getValue());
-            state.setDealerVisibleCard("");
         } else {
             state.setDealerCards(List.of("Carta coperta"));
+            state.setDealerCardImages(List.of("/assets/back_side.png"));
             state.setDealerValue(0);
-            state.setDealerVisibleCard(dealerHand.getCards().get(0).toString());
         }
 
         return state;

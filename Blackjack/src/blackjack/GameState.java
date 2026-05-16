@@ -1,15 +1,15 @@
 package blackjack;
 
-//Questa classe serve per rappresentare lo stato della partita che poi il server manderà al client. 
-//Nei sistemi client-server turn-based, il server conserva lo stato e lo restituisce ai client come risposta ai loro comandi.
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class GameState {
     private List<String> playerCards = new ArrayList<>();
     private List<String> dealerCards = new ArrayList<>();
-    private String dealerVisibleCard = "";
+
+    private List<String> playerCardImages = new ArrayList<>();
+    private List<String> dealerCardImages = new ArrayList<>();
+
     private int playerValue = 0;
     private int dealerValue = 0;
     private boolean gameOver = false;
@@ -31,12 +31,20 @@ public class GameState {
         this.dealerCards = dealerCards;
     }
 
-    public String getDealerVisibleCard() {
-        return dealerVisibleCard;
+    public List<String> getPlayerCardImages() {
+        return playerCardImages;
     }
 
-    public void setDealerVisibleCard(String dealerVisibleCard) {
-        this.dealerVisibleCard = dealerVisibleCard;
+    public void setPlayerCardImages(List<String> playerCardImages) {
+        this.playerCardImages = playerCardImages;
+    }
+
+    public List<String> getDealerCardImages() {
+        return dealerCardImages;
+    }
+
+    public void setDealerCardImages(List<String> dealerCardImages) {
+        this.dealerCardImages = dealerCardImages;
     }
 
     public int getPlayerValue() {

@@ -165,15 +165,16 @@ public class ServerMain {
     }
 
     private static String toJson(GameState state) {
-        return "{"
-                + "\"playerCards\":" + toJsonArray(state.getPlayerCards()) + ","
-                + "\"dealerCards\":" + toJsonArray(state.getDealerCards()) + ","
-                + "\"dealerVisibleCard\":\"" + escapeJson(state.getDealerVisibleCard()) + "\","
-                + "\"playerValue\":" + state.getPlayerValue() + ","
-                + "\"dealerValue\":" + state.getDealerValue() + ","
-                + "\"gameOver\":" + state.isGameOver() + ","
-                + "\"message\":\"" + escapeJson(state.getMessage()) + "\""
-                + "}";
+    return "{"
+        + "\"playerCards\":" + toJsonArray(state.getPlayerCards()) + ","
+        + "\"dealerCards\":" + toJsonArray(state.getDealerCards()) + ","
+        + "\"playerCardImages\":" + toJsonArray(state.getPlayerCardImages()) + ","
+        + "\"dealerCardImages\":" + toJsonArray(state.getDealerCardImages()) + ","
+        + "\"playerValue\":" + state.getPlayerValue() + ","
+        + "\"dealerValue\":" + state.getDealerValue() + ","
+        + "\"gameOver\":" + state.isGameOver() + ","
+        + "\"message\":\"" + escapeJson(state.getMessage()) + "\""
+        + "}";
     }
 
     private static String toJsonArray(java.util.List<String> list) {

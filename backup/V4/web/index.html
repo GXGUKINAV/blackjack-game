@@ -1,0 +1,350 @@
+<!--Il browser usa fetch() per chiamare le API del backend Java e aggiornare il DOM con i dati JSON. 
+//fetch() è l’approccio standard lato browser per fare richieste HTTP asincrone al server e ricevere risposte JSON. -->
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blackjack V4.0</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #0e1014 0%, #151924 100%);
+      color: #f5f5f5;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: rgba(20, 24, 31, 0.95);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    h1 {
+      margin: 0 0 20px 0;
+      text-align: center;
+      font-size: 32px;
+    }
+
+    .table-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .zone {
+      background: #1d2330;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .zone-row {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .zone-label {
+      min-width: 90px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #d9e2ff;
+    }
+
+    .cards-area {
+      flex: 1;
+      min-height: 110px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .card {
+      min-width: 88px;
+      min-height: 120px;
+      border-radius: 8px;
+      background: #f7f7f7;
+      color: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8px;
+      gap: 6px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+    }
+
+    .card-image {
+      width: 72px;
+      height: auto;
+      border-radius: 6px;
+      display: block;
+    }
+
+    #dealerCardsArea .meta-text,
+    #playerCardsArea .meta-text {
+      font-size: 11px;
+      line-height: 1.2;
+      color: #111;
+      opacity: 0.9;
+    }
+
+    .card.back {
+      background-image: url('/assets/back_side.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: transparent;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+    }
+
+    .deck-stack {
+      position: relative;
+      width: 90px;
+      height: 120px;
+      margin-left: auto;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .deck-stack .stack-card {
+      position: absolute;
+      width: 90px;
+      height: 120px;
+      border-radius: 8px;
+      background-image: url('/assets/back_side.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 6px 10px rgba(0,0,0,0.25);
+    }
+
+    .deck-stack .stack-card:nth-child(1) {
+      top: 0;
+      left: 0;
+    }
+
+    .deck-stack .stack-card:nth-child(2) {
+      top: 6px;
+      left: 6px;
+    }
+
+    .deck-stack .stack-card:nth-child(3) {
+      top: 12px;
+      left: 12px;
+    }
+
+    .score-box {
+      min-width: 80px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      color: #ffd166;
+    }
+
+    .meta-text {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-top: 8px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      background: #2d6cdf;
+      color: white;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    button:hover {
+      background: #1f57b8;
+      transform: translateY(-2px);
+    }
+
+    .message-box {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: rgba(255, 209, 102, 0.12);
+      color: #ffd166;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      .zone-row {
+        align-items: flex-start;
+      }
+
+      .deck-stack {
+        margin-left: 0;
+      }
+
+      .score-box {
+        width: 100%;
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Blackjack V4.0</h1>
+
+    <div class="table-layout">
+      <section class="zone" id="dealerZone">
+        <div class="zone-row">
+          <div class="zone-label">Dealer</div>
+
+          <div class="cards-area" id="dealerCardsArea">
+            <div class="card back">COPERTA</div>
+          </div>
+
+          <div class="score-box" id="dealerValue">?</div>
+
+          <div class="deck-stack" title="Mazzo">
+            <div class="stack-card"></div>
+            <div class="stack-card"></div>
+            <div class="stack-card"></div>
+          </div>
+        </div>
+        <div class="meta-text" id="dealerVisible">Carta visibile: -</div>
+      </section>
+
+      <section class="zone" id="playerZone">
+        <div class="zone-row">
+          <div class="zone-label">P1</div>
+
+          <div class="cards-area" id="playerCardsArea">
+            <div class="card">-</div>
+          </div>
+
+          <div class="score-box" id="playerValue">0</div>
+        </div>
+      </section>
+
+      <div class="controls">
+        <button onclick="startGame()">Start</button>
+        <button onclick="hit()">Hit</button>
+        <button onclick="stand()">Stand</button>
+        <button onclick="loadState()">Refresh</button>
+      </div>
+
+      <div class="message-box" id="message">Premi Start per iniziare.</div>
+    </div>
+  </div>
+
+  <script>
+    function renderCards(containerId, imagePaths = [], labels = []) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      container.innerHTML = "";
+
+      if (!imagePaths.length) {
+        const empty = document.createElement("div");
+        empty.className = "card";
+        empty.textContent = "-";
+        container.appendChild(empty);
+        return;
+      }
+
+      imagePaths.forEach((src, index) => {
+        const label = labels[index] || "-";
+        const isBackCard =
+          label === "Carta coperta" ||
+          src.includes("back.png") ||
+          src.includes("back_side.png");
+
+        const card = document.createElement("div");
+
+        if (isBackCard) {
+          card.className = "card back";
+          card.textContent = "COPERTA";
+          container.appendChild(card);
+          return;
+        }
+
+        card.className = "card";
+
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = label;
+        img.className = "card-image";
+
+        img.onerror = function () {
+          card.textContent = label;
+        };
+
+        card.appendChild(img);
+        container.appendChild(card);
+      });
+    }
+
+    function updateUI(state) {
+      renderCards("playerCardsArea", state.playerCardImages || [], state.playerCards || []);
+      renderCards("dealerCardsArea", state.dealerCardImages || [], state.dealerCards || []);
+
+      document.getElementById("playerValue").textContent = state.playerValue ?? 0;
+      document.getElementById("dealerValue").textContent =
+        state.gameOver ? (state.dealerValue ?? 0) : "?";
+      document.getElementById("dealerVisible").textContent =
+        "Carta visibile: " + (state.dealerVisibleCard || "-");
+      document.getElementById("message").textContent =
+        state.message || "Nessun messaggio.";
+    }
+
+    async function callApi(url, method = "GET") {
+      const response = await fetch(url, { method });
+      const data = await response.json();
+      updateUI(data);
+    }
+
+    async function startGame() {
+      await callApi("/api/game/start", "POST");
+    }
+
+    async function hit() {
+      await callApi("/api/game/hit", "POST");
+    }
+
+    async function stand() {
+      await callApi("/api/game/stand", "POST");
+    }
+
+    async function loadState() {
+      await callApi("/api/game/state", "GET");
+    }
+  </script>
+</body>
+</html>

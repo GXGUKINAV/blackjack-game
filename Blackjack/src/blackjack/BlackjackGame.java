@@ -1,41 +1,70 @@
 package blackjack;
 
-// logica del gioco
-
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class BlackjackGame {
-    private Deck deck;
-    private Hand playerHand;
-    private Hand dealerHand;
+    private Deck   deck;
+    private Hand   playerHand;
+    private Hand   dealerHand;
     private boolean gameOver;
     private boolean started;
-    private String message;
+    private String  message;
+
+    // Scommessa corrente e crediti del giocatore
+    private double bet       = 0.0;
+    private double credits   = 0.0;
+    private int    playerId  = -1;  // id reale dal login
 
     private final DatabaseManager dbManager = new DatabaseManager();
 
     public BlackjackGame() {
-        started = false;
+        started  = false;
         gameOver = false;
-        message = "";
+        message  = "";
     }
 
-    /**
-     * Restituisce true se la partita è attiva e non ancora terminata.
-     * Usato da ServerMain per bloccare chiamate /start premature.
-     */
+    /** Imposta il giocatore (chiamato dal server dopo il login) */
+    public void setPlayer(int playerId, double credits) {
+        this.playerId = playerId;
+        this.credits  = credits;
+    }
+
     public boolean isInProgress() {
         return started && !gameOver;
     }
 
+    /** Imposta la scommessa PRIMA di startGame. Lancia eccezione se non valida. */
+    public void setBet(double bet) {
+        if (isInProgress()) {
+            throw new IllegalStateException("Non puoi cambiare la scommessa durante una partita.");
+        }
+        if (bet <= 0) {
+            throw new IllegalArgumentException("La scommessa deve essere maggiore di 0.");
+        }
+        if (bet > 100) {
+            throw new IllegalArgumentException("La scommessa massima è 100 chips.");
+        }
+        if (bet > credits) {
+            throw new IllegalArgumentException("Crediti insufficienti.");
+        }
+        this.bet = bet;
+    }
+
+    public double getBet()     { return bet; }
+    public double getCredits() { return credits; }
+
     public GameState startGame() {
-        deck = new Deck();
+        if (bet <= 0) {
+            throw new IllegalStateException("Imposta una scommessa prima di iniziare.");
+        }
+
+        deck       = new Deck();
         playerHand = new Hand();
         dealerHand = new Hand();
-        gameOver = false;
-        started = true;
-        message = "Partita iniziata.";
+        gameOver   = false;
+        started    = true;
+        message    = "Partita iniziata.";
 
         playerHand.addCard(deck.drawCard());
         dealerHand.addCard(deck.drawCard());
@@ -43,46 +72,41 @@ public class BlackjackGame {
         dealerHand.addCard(deck.drawCard());
 
         if (playerHand.getValue() == 21) {
+            // Blackjack naturale: paga 3:2
+            double winnings = bet * 1.5;
+            credits += winnings;
             gameOver = true;
-            message = "Blackjack! Hai vinto!";
+            message  = "Blackjack! Hai vinto " + (int) winnings + " chips!";
+            saveAndUpdateCredits("WIN", false);
         }
 
-        return buildState(false);
+        return buildState(gameOver);
     }
 
     public GameState playerHit() {
         checkStarted();
-
-        if (gameOver) {
-            return buildState(true);
-        }
+        if (gameOver) return buildState(true);
 
         playerHand.addCard(deck.drawCard());
 
         if (playerHand.isBust()) {
-            gameOver = true;
-            message = "Hai sballato! Hai perso.";
-            
-            dbManager.salvaPartita("LOSE", playerHand.getValue(), dealerHand.getValue(), false);
-            
+            credits  -= bet;
+            gameOver  = true;
+            message   = "Hai sballato! Hai perso " + (int) bet + " chips.";
+            saveAndUpdateCredits("LOSE", false);
             return buildState(true);
         }
 
-        if (playerHand.getValue() == 21) {
-            message = "Hai fatto 21. Ora puoi stare.";
-        } else {
-            message = "Hai pescato una carta.";
-        }
+        message = playerHand.getValue() == 21
+                ? "Hai fatto 21. Ora puoi stare."
+                : "Hai pescato una carta.";
 
         return buildState(false);
     }
 
     public GameState playerStand() {
         checkStarted();
-
-        if (gameOver) {
-            return buildState(true);
-        }
+        if (gameOver) return buildState(true);
 
         while (dealerHand.getValue() < 17) {
             dealerHand.addCard(deck.drawCard());
@@ -92,119 +116,96 @@ public class BlackjackGame {
 
         int playerValue = playerHand.getValue();
         int dealerValue = dealerHand.getValue();
+        String esito;
 
-        if (dealerHand.isBust()) {
-            message = "Il dealer ha sballato. Hai vinto!";
-        } else if (playerValue > dealerValue) {
-            message = "Hai vinto!";
+        if (dealerHand.isBust() || playerValue > dealerValue) {
+            credits += bet;
+            esito    = "WIN";
+            message  = dealerHand.isBust()
+                ? "Il dealer ha sballato. Hai vinto " + (int) bet + " chips!"
+                : "Hai vinto " + (int) bet + " chips!";
         } else if (playerValue < dealerValue) {
-            message = "Hai perso!";
+            credits -= bet;
+            esito    = "LOSE";
+            message  = "Hai perso " + (int) bet + " chips.";
         } else {
-            message = "Pareggio!";
+            // Pareggio: la scommessa torna indietro (nessuna variazione)
+            esito   = "DRAW";
+            message = "Pareggio! La scommessa è stata restituita.";
         }
 
-        // Salva la partita nel database
-        String esito = determineOutcome();   // vedi sotto
-        dbManager.salvaPartita(esito, playerHand.getValue(), dealerHand.getValue(), false);
-
-
+        saveAndUpdateCredits(esito, false);
         return buildState(true);
     }
 
-    private String determineOutcome() {
-        // Metodo helper per calcolare l'esito dal punto di vista del giocatore, da salvare nel DB
-        int playerVal = playerHand.getValue();
-        int dealerVal = dealerHand.getValue();
-
-        if (playerVal > 21) return "LOSE";
-        if (dealerVal > 21) return "WIN";
-        if (playerVal > dealerVal) return "WIN";
-        if (playerVal < dealerVal) return "LOSE";
-        return "DRAW";
-    }
-
-
-    /**
-     * Chiamato quando il client abbandona la pagina (beforeunload).
-     * Se la partita era in corso il dealer vince per abbandono.
-     * Se non era in corso non fa niente di distruttivo.
-     */
     public GameState abandonGame() {
         if (!started || gameOver) {
-            // Nessuna partita attiva: restituisce stato neutro
             GameState empty = new GameState();
             empty.setStarted(false);
             empty.setGameOver(true);
             empty.setMessage("Nessuna partita in corso.");
+            empty.setCredits(credits);
             return empty;
         }
 
-        // Partita in corso: il dealer vince per abbandono
-        // Il dealer pesca fino a 17+ per mostrare uno stato realistico
         while (dealerHand.getValue() < 17) {
             dealerHand.addCard(deck.drawCard());
         }
 
-        gameOver = true;
-        message = "Partita abbandonata. Vince il dealer.";
+        credits  -= bet;
+        gameOver  = true;
+        message   = "Partita abbandonata. Hai perso " + (int) bet + " chips.";
 
-        String esito = "LOSE";  // dal punto di vista del giocatore, l'abbandono è sempre una sconfitta
-        dbManager.salvaPartita(esito, playerHand.getValue(), dealerHand.getValue(), true);
-
+        saveAndUpdateCredits("LOSE", true);
         return buildState(true);
     }
 
     public GameState getState() {
         if (!started) {
-            // Partita non ancora avviata: stato iniziale pulito
             GameState empty = new GameState();
             empty.setStarted(false);
             empty.setGameOver(false);
-            empty.setMessage("Premi Start per iniziare.");
+            empty.setMessage("Imposta la scommessa e premi Start.");
+            empty.setBet(bet);
+            empty.setCredits(credits);
             return empty;
         }
         return buildState(gameOver);
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void saveAndUpdateCredits(String esito, boolean disconnesso) {
+        if (playerId < 0) return;  // sicurezza: non salvare se non loggato
+        dbManager.salvaPartita(playerId, esito,
+                playerHand.getValue(), dealerHand.getValue(),
+                bet, disconnesso);
+        dbManager.aggiornaCrediti(playerId, credits);
+    }
+
     private void checkStarted() {
-        if (!started) {
-            throw new IllegalStateException("La partita non è stata ancora avviata.");
-        }
+        if (!started) throw new IllegalStateException("La partita non è stata ancora avviata.");
     }
 
     private GameState buildState(boolean revealDealer) {
         GameState state = new GameState();
 
-        List<String> playerCards = playerHand.getCards()
-                .stream()
-                .map(Card::getDisplayName)
-                .collect(Collectors.toList());
-
-        List<String> playerCardImages = playerHand.getCards()
-                .stream()
-                .map(Card::getImagePath)
-                .collect(Collectors.toList());
-
-        state.setPlayerCards(playerCards);
-        state.setPlayerCardImages(playerCardImages);
+        state.setPlayerCards(playerHand.getCards().stream()
+                .map(Card::getDisplayName).collect(Collectors.toList()));
+        state.setPlayerCardImages(playerHand.getCards().stream()
+                .map(Card::getImagePath).collect(Collectors.toList()));
         state.setPlayerValue(playerHand.getValue());
         state.setGameOver(gameOver);
         state.setStarted(started);
         state.setMessage(message);
+        state.setBet(bet);
+        state.setCredits(credits);
 
         if (revealDealer) {
-            List<String> dealerCards = dealerHand.getCards()
-                    .stream()
-                    .map(Card::getDisplayName)
-                    .collect(Collectors.toList());
-
-            List<String> dealerCardImages = dealerHand.getCards()
-                    .stream()
-                    .map(Card::getImagePath)
-                    .collect(Collectors.toList());
-
-            state.setDealerCards(dealerCards);
-            state.setDealerCardImages(dealerCardImages);
+            state.setDealerCards(dealerHand.getCards().stream()
+                    .map(Card::getDisplayName).collect(Collectors.toList()));
+            state.setDealerCardImages(dealerHand.getCards().stream()
+                    .map(Card::getImagePath).collect(Collectors.toList()));
             state.setDealerValue(dealerHand.getValue());
         } else {
             state.setDealerCards(List.of("Carta coperta"));

@@ -1,54 +1,291 @@
-<!--Il browser usa fetch() per chiamare le API del backend Java e aggiornare il DOM con i dati JSON. 
-//fetch() è l'approccio standard lato browser per fare richieste HTTP asincrone al server e ricevere risposte JSON. -->
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Blackjack V5</title>
+  <title>Blackjack V6</title>
 
   <link rel="icon" type="image/x-icon" href="/logo/blackjack_dark.ico" media="(prefers-color-scheme: light)">
   <link rel="icon" type="image/x-icon" href="/logo/blackjack_white.ico" media="(prefers-color-scheme: dark)">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
   <style>
-    * {
-      box-sizing: border-box;
+    :root {
+      --bg-deep:    #0a0c0f;
+      --bg-card:    #13171f;
+      --bg-zone:    #1a1f2b;
+      --border:     rgba(255,255,255,0.07);
+      --accent:     #c9a84c;
+      --accent-dim: rgba(201,168,76,0.15);
+      --accent-glow:rgba(201,168,76,0.35);
+      --red:        #e03535;
+      --text:       #e8eaf0;
+      --text-dim:   #7a8090;
+      --chip-bg:    #0d0f12;
+      --chip-ring:  #c9a84c;
+      --radius:     14px;
     }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      margin: 0;
-      padding: 24px;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(180deg, #0e1014 0%, #151924 100%);
-      color: #f5f5f5;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      min-height: 100vh;
     }
 
-    .container {
+    /* ── PAGE SYSTEM ───────────────────────────────────────────────── */
+    .page { display: none; min-height: 100vh; }
+    .page.active { display: flex; }
+
+    /* ────────────────────────────────────────────────────────────────
+       LOGIN / REGISTER PAGE
+    ──────────────────────────────────────────────────────────────── */
+    #page-auth {
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 0%, rgba(201,168,76,0.08) 0%, transparent 70%),
+        var(--bg-deep);
+    }
+
+    .auth-box {
+      width: 100%;
+      max-width: 400px;
+      padding: 48px 40px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+      animation: authIn 0.4s cubic-bezier(.22,1,.36,1);
+    }
+
+    @keyframes authIn {
+      from { opacity: 0; transform: translateY(24px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0)    scale(1); }
+    }
+
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .auth-logo svg {
+      width: 56px;
+      height: 56px;
+      margin-bottom: 12px;
+    }
+
+    .auth-logo h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      letter-spacing: 3px;
+      color: var(--accent);
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 28px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 9px;
+      text-align: center;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-dim);
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .auth-tab.active {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .auth-field {
+      margin-bottom: 16px;
+    }
+
+    .auth-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .auth-field input {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--bg-zone);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .auth-field input:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.15s, transform 0.15s;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .auth-error {
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: rgba(224,53,53,0.12);
+      border: 1px solid rgba(224,53,53,0.3);
+      border-radius: 8px;
+      color: #e07070;
+      font-size: 13px;
+      text-align: center;
+      display: none;
+    }
+
+    /* ────────────────────────────────────────────────────────────────
+       MAIN APP (gioco + stats) con navbar
+    ──────────────────────────────────────────────────────────────── */
+    #page-app {
+      flex-direction: column;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      height: 58px;
+      background: rgba(13,15,18,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      gap: 8px;
+    }
+
+    .navbar-brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      letter-spacing: 2px;
+      color: var(--accent);
+      margin-right: 24px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .nav-link {
+      padding: 7px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-dim);
+      transition: all 0.2s;
+      user-select: none;
+      border: none;
+      background: none;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .nav-link:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .nav-link.active { color: var(--accent); background: var(--accent-dim); }
+
+    .navbar-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+    }
+
+    .navbar-credits {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-dim);
+      padding: 5px 12px;
+      border-radius: 20px;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    .navbar-username {
+      font-size: 14px;
+      color: var(--text-dim);
+    }
+
+    .btn-logout {
+      padding: 6px 14px;
+      background: rgba(224,53,53,0.1);
+      border: 1px solid rgba(224,53,53,0.25);
+      color: #e07070;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.2s;
+    }
+    .btn-logout:hover { background: rgba(224,53,53,0.2); }
+
+    /* APP PANELS */
+    .app-panel { display: none; flex: 1; padding: 24px; }
+    .app-panel.active { display: block; }
+
+    /* ────────────────────────────────────────────────────────────────
+       GAME PANEL
+    ──────────────────────────────────────────────────────────────── */
+    .game-wrap {
       max-width: 1100px;
       margin: 0 auto;
-      background: rgba(20, 24, 31, 0.95);
-      border-radius: 18px;
-      padding: 24px;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-    }
-
-    h1 {
-      margin: 0 0 20px 0;
-      text-align: center;
-      font-size: 32px;
     }
 
     .table-layout {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
     }
 
     .zone {
-      background: #1d2330;
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 16px;
+      background: var(--bg-zone);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       padding: 18px;
     }
 
@@ -61,24 +298,25 @@
 
     .zone-label {
       min-width: 90px;
-      font-size: 22px;
-      font-weight: bold;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 1px;
       color: #d9e2ff;
     }
 
     .cards-area {
       flex: 1;
-      min-height: 110px;
+      min-height: 116px;
       display: flex;
       align-items: center;
       gap: 12px;
       flex-wrap: wrap;
       padding: 12px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.03);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
     }
 
-    /* ── CARD BASE ── */
+    /* ── CARD ── */
     .card {
       position: relative;
       width: 90px;
@@ -90,55 +328,40 @@
       padding: 6px;
       border: none;
       border-radius: 6px;
-      box-shadow: none;
       overflow: hidden;
       --x: 50%;
       --y: 50%;
       cursor: default;
-      transition: box-shadow 0.2s ease, transform 0.15s ease;
+      transition: box-shadow 0.2s, transform 0.15s;
     }
 
-    /* ── GLOSS OVERLAY ── */
     .card::after {
       content: "";
       position: absolute;
       inset: 0;
       border-radius: inherit;
       background:
-        radial-gradient(
-          ellipse 80px 60px at var(--x) var(--y),
-          rgba(255, 255, 255, 0.45) 0%,
-          transparent 70%
-        ),
-        conic-gradient(
-          from 0deg at var(--x) var(--y),
-          rgba(255, 80,  80,  0.25),
-          rgba(255, 200, 60,  0.25),
-          rgba(80,  255, 120, 0.25),
-          rgba(60,  180, 255, 0.25),
-          rgba(180, 80,  255, 0.25),
-          rgba(255, 80,  80,  0.25)
-        );
-      mix-blend-mode: overlay; /* L'effetto di luce si adatta al colore della carta sottostante */
-      mix-blend-mode: screen; /* Metto l'effetto sui simboli di colore più scuro */
+        radial-gradient(ellipse 80px 60px at var(--x) var(--y),
+          rgba(255,255,255,0.45) 0%, transparent 70%),
+        conic-gradient(from 0deg at var(--x) var(--y),
+          rgba(255,80,80,.25), rgba(255,200,60,.25),
+          rgba(80,255,120,.25), rgba(60,180,255,.25),
+          rgba(180,80,255,.25), rgba(255,80,80,.25));
+      mix-blend-mode: screen;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.25s ease;
+      transition: opacity 0.25s;
       z-index: 2;
     }
 
-    .card:not(.back):hover::after {
-      opacity: 1;
-    }
-
+    .card:not(.back):hover::after { opacity: 1; }
     .card:not(.back):hover {
       transform: translateY(-4px) scale(1.03);
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255,255,255,0.08);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.4), 0 0 12px rgba(255,255,255,0.08);
     }
 
     .card-image {
-      width: 83px;
-      height: 119px;
+      width: 83px; height: 119px;
       object-fit: contain;
       border-radius: 3px;
       display: block;
@@ -146,24 +369,16 @@
       z-index: 1;
     }
 
-    #dealerCardsArea .meta-text,
-    #playerCardsArea .meta-text {
-      font-size: 11px;
-      line-height: 1.2;
-      color: #111;
-      opacity: 0.9;
-    }
-
     .card.back {
       background-image: url('/assets/back_side.png');
       background-size: cover;
       background-position: center;
-      background-repeat: no-repeat;
       color: transparent;
       border: 2px solid rgba(255,255,255,0.2);
       border-radius: 8px;
     }
 
+    /* ── DECK STACK ── */
     .deck-stack {
       position: relative;
       width: 90px;
@@ -181,7 +396,6 @@
       background-image: url('/assets/back_side.png');
       background-size: cover;
       background-position: center;
-      background-repeat: no-repeat;
       border: 1px solid rgba(255,255,255,0.15);
       box-shadow: 0 6px 10px rgba(0,0,0,0.25);
     }
@@ -190,251 +404,790 @@
     .deck-stack .stack-card:nth-child(2) { top: 6px;  left: 6px; }
     .deck-stack .stack-card:nth-child(3) { top: 12px; left: 12px; }
 
+    /* ── CHIP STACK ── */
+    .chip-stack {
+      position: relative;
+      width: 64px;
+      height: 72px;
+      flex-shrink: 0;
+    }
+
+    .chip {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--chip-bg);
+      border: 3px solid var(--chip-ring);
+      box-shadow: 0 0 10px rgba(201,168,76,0.2), inset 0 0 12px rgba(201,168,76,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      left: 0;
+    }
+
+    /* Logo image inside chip — riempie il chip, ritagliato a cerchio */
+    .chip-logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+
+    .chip:nth-child(1) { top: 8px; }
+    .chip:nth-child(2) { top: 4px; }
+    .chip:nth-child(3) { top: 0px; }
+
+    /* ── SCORE ── */
     .score-box {
+      min-width: 70px;
+      text-align: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      color: var(--accent);
+    }
+
+    /* ── BETTING ZONE ── */
+    .bet-zone {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 16px 20px;
+      background: var(--bg-zone);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .bet-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+    }
+
+    .bet-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bet-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.2s, background 0.2s;
+      padding: 0;
+    }
+
+    .bet-btn:hover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .bet-display {
       min-width: 80px;
       text-align: center;
+      font-family: 'Bebas Neue', sans-serif;
       font-size: 28px;
-      font-weight: bold;
-      color: #ffd166;
+      color: var(--accent);
     }
 
-    .meta-text {
-      font-size: 14px;
-      opacity: 0.8;
-      margin-top: 8px;
+    .bet-sublabel {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-align: center;
+      margin-top: 2px;
     }
 
+    /* ── CONTROLS ── */
     .controls {
       display: flex;
       justify-content: center;
       gap: 12px;
       flex-wrap: wrap;
-      margin-top: 10px;
     }
 
-    button {
+    .game-btn {
       border: none;
       border-radius: 12px;
-      padding: 12px 20px;
-      font-size: 16px;
-      font-weight: bold;
+      padding: 12px 28px;
+      font-size: 15px;
+      font-weight: 700;
       cursor: pointer;
-      background: #2d6cdf;
-      color: white;
-      transition: transform 0.15s ease, background 0.15s ease;
+      transition: transform 0.15s, opacity 0.15s;
+      font-family: 'Inter', sans-serif;
     }
 
-    button:hover {
-      background: #1f57b8;
-      transform: translateY(-2px);
-    }
+    .game-btn:hover { transform: translateY(-2px); opacity: 0.9; }
 
-    /* Bottone nascosto: rimosso dal layout, non cliccabile */
-    button.hidden {
-      display: none;
-    }
+    #btnStart { background: var(--accent); color: #000; }
+    #btnHit   { background: #2d6cdf; color: #fff; }
+    #btnStand { background: #444e60; color: #fff; }
 
+    .game-btn.hidden { display: none; }
+
+    /* ── MESSAGE ── */
     .message-box {
-      margin-top: 14px;
       padding: 14px 16px;
       border-radius: 12px;
-      background: rgba(255, 209, 102, 0.12);
-      color: #ffd166;
-      font-size: 18px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(201,168,76,0.2);
+      color: var(--accent);
+      font-size: 17px;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    /* ────────────────────────────────────────────────────────────────
+       STATS PANEL
+    ──────────────────────────────────────────────────────────────── */
+    .stats-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .stats-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      letter-spacing: 2px;
+      color: var(--accent);
+      margin-bottom: 24px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--bg-zone);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
       text-align: center;
     }
 
-    @media (max-width: 768px) {
-      .zone-row { align-items: flex-start; }
-      .deck-stack { margin-left: 0; }
-      .score-box { width: 100%; text-align: left; }
+    .stat-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 40px;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 6px;
+    }
+
+    .stats-section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .history-table th {
+      text-align: left;
+      padding: 10px 14px;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .history-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: var(--text);
+    }
+
+    .history-table tr:last-child td { border-bottom: none; }
+
+    .esito-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .esito-WIN  { background: rgba(46,200,120,0.15); color: #2ec878; }
+    .esito-LOSE { background: rgba(224,53,53,0.15);  color: #e05555; }
+    .esito-DRAW { background: rgba(100,120,200,0.15);color: #8090e0; }
+
+    .stats-loading {
+      text-align: center;
+      padding: 60px;
+      color: var(--text-dim);
+      font-size: 16px;
+    }
+
+    /* responsive */
+    @media (max-width: 600px) {
+      .auth-box { margin: 16px; padding: 32px 24px; }
+      .navbar { padding: 0 16px; }
+      .app-panel { padding: 16px; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Blackjack V5</h1>
 
-    <div class="table-layout">
-      <section class="zone" id="dealerZone">
-        <div class="zone-row">
-          <div class="zone-label">Dealer</div>
-          <div class="cards-area" id="dealerCardsArea">
-            <div class="card back"></div>
-          </div>
-          <div class="score-box" id="dealerValue">?</div>
-          <div class="deck-stack" title="Mazzo">
-            <div class="stack-card"></div>
-            <div class="stack-card"></div>
-            <div class="stack-card"></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="zone" id="playerZone">
-        <div class="zone-row">
-          <div class="zone-label">P1</div>
-          <div class="cards-area" id="playerCardsArea">
-            <div class="card">-</div>
-          </div>
-          <div class="score-box" id="playerValue">0</div>
-        </div>
-      </section>
-
-      <div class="controls">
-        <!-- Bottoni dinamici: solo uno dei due gruppi è visibile per volta -->
-        <button id="btnStart" onclick="startGame()">Start</button>
-        <button id="btnHit"   onclick="hit()"   class="hidden">Hit</button>
-        <button id="btnStand" onclick="stand()" class="hidden">Stand</button>
+  <!-- ══════════════════════════════════════════════════════════════
+       PAGE: AUTH (login / register)
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="page-auth" class="page active">
+    <div class="auth-box">
+      <div class="auth-logo">
+        <img src="/logo/Blackjack_yellow.png" alt="Blackjack logo"
+             style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;">
+        <h1>BLACKJACK</h1>
       </div>
 
-      <div class="message-box" id="message">Premi Start per iniziare.</div>
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Accedi</div>
+        <div class="auth-tab"        id="tabReg"   onclick="switchTab('register')">Registrati</div>
+      </div>
+
+      <div id="formLogin">
+        <div class="auth-field">
+          <label>Username</label>
+          <input type="text" id="loginUser" placeholder="Il tuo username" autocomplete="username"
+                 onkeydown="if(event.key==='Enter') doLogin()">
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"
+                 onkeydown="if(event.key==='Enter') doLogin()">
+        </div>
+        <button class="btn-primary" onclick="doLogin()">Entra</button>
+      </div>
+
+      <div id="formRegister" style="display:none">
+        <div class="auth-field">
+          <label>Username</label>
+          <input type="text" id="regUser" placeholder="Scegli un username" autocomplete="username"
+                 onkeydown="if(event.key==='Enter') doRegister()">
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" id="regPass" placeholder="••••••••" autocomplete="new-password"
+                 onkeydown="if(event.key==='Enter') doRegister()">
+        </div>
+        <button class="btn-primary" onclick="doRegister()">Crea Account</button>
+      </div>
+
+      <div class="auth-error" id="authError"></div>
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════════════════════════
+       PAGE: APP (navbar + game/stats panels)
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="page-app" class="page">
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <span class="navbar-brand">BJ V6</span>
+      <div class="nav-links">
+        <button class="nav-link active" id="navGame"  onclick="showPanel('game')">🃏 Gioca</button>
+        <button class="nav-link"        id="navStats" onclick="showPanel('stats')">📊 Statistiche</button>
+      </div>
+      <div class="navbar-user">
+        <span class="navbar-credits" id="navCredits">— chips</span>
+        <span class="navbar-username" id="navUsername"></span>
+        <button class="btn-logout" onclick="doLogout()">Esci</button>
+      </div>
+    </nav>
+
+    <!-- GAME PANEL -->
+    <div class="app-panel active" id="panel-game">
+      <div class="game-wrap">
+        <div class="table-layout">
+
+          <!-- Dealer zone -->
+          <section class="zone" id="dealerZone">
+            <div class="zone-row">
+              <div class="zone-label">Dealer</div>
+              <div class="cards-area" id="dealerCardsArea">
+                <div class="card back"></div>
+              </div>
+              <div class="score-box" id="dealerValue">?</div>
+              <!-- Deck stack -->
+              <div class="deck-stack" title="Mazzo">
+                <div class="stack-card"></div>
+                <div class="stack-card"></div>
+                <div class="stack-card"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Player zone -->
+          <section class="zone" id="playerZone">
+            <div class="zone-row">
+              <div class="zone-label">P1</div>
+              <div class="cards-area" id="playerCardsArea">
+                <div class="card">-</div>
+              </div>
+              <div class="score-box" id="playerValue">0</div>
+            </div>
+          </section>
+
+          <!-- Bet zone -->
+          <div class="bet-zone" id="betZone">
+            <span class="bet-label">Scommessa</span>
+            <div class="bet-controls">
+              <button class="bet-btn" id="btnBetMinus" onclick="changeBet(-10)">−</button>
+              <div>
+                <div class="bet-display" id="betDisplay">10</div>
+                <div class="bet-sublabel">chips</div>
+              </div>
+              <button class="bet-btn" id="btnBetPlus" onclick="changeBet(+10)">+</button>
+            </div>
+            <!-- Chip stack decorativo -->
+            <div class="chip-stack" title="Chips">
+              <div class="chip"><img class="chip-logo" src="/logo/Blackjack_yellow.png" alt="chip"></div>
+              <div class="chip"><img class="chip-logo" src="/logo/Blackjack_yellow.png" alt="chip"></div>
+              <div class="chip"><img class="chip-logo" src="/logo/Blackjack_yellow.png" alt="chip"></div>
+            </div>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="controls">
+            <button class="game-btn" id="btnStart" onclick="startGame()">Start</button>
+            <button class="game-btn hidden" id="btnHit"   onclick="hit()">Hit</button>
+            <button class="game-btn hidden" id="btnStand" onclick="stand()">Stand</button>
+          </div>
+
+          <!-- Message -->
+          <div class="message-box" id="message">Imposta la scommessa e premi Start.</div>
+
+        </div><!-- /table-layout -->
+      </div><!-- /game-wrap -->
+    </div><!-- /panel-game -->
+
+    <!-- STATS PANEL -->
+    <div class="app-panel" id="panel-stats">
+      <div class="stats-wrap">
+        <div class="stats-title">Le tue statistiche</div>
+        <div id="statsContent">
+          <div class="stats-loading">Caricamento...</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-app -->
+
   <script>
-    /* ── GLOSS EFFECT ───────────────────────────────────────────────── */
-    function attachGlossEffect(cardEl) {
-      if (cardEl.classList.contains("back")) return;
+  // ═══════════════════════════════════════════════════════════════════
+  //  STATE
+  // ═══════════════════════════════════════════════════════════════════
+  let token    = sessionStorage.getItem('bj_token')    || null;
+  let username = sessionStorage.getItem('bj_username') || '';
+  let credits  = parseFloat(sessionStorage.getItem('bj_credits')) || 0;
+  let currentBet = 10;
 
-      cardEl.addEventListener("mousemove", (e) => {
-        const rect = cardEl.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width)  * 100;
-        const y = ((e.clientY - rect.top)  / rect.height) * 100;
-        cardEl.style.setProperty("--x", `${x}%`);
-        cardEl.style.setProperty("--y", `${y}%`);
-      });
+  // Ripristina sessione se già loggato (refresh)
+  if (token) {
+    showApp();
+    syncGameState();
+  }
 
-      cardEl.addEventListener("mouseleave", () => {
-        cardEl.style.setProperty("--x", "50%");
-        cardEl.style.setProperty("--y", "50%");
-      });
+  // ═══════════════════════════════════════════════════════════════════
+  //  AUTH
+  // ═══════════════════════════════════════════════════════════════════
+  function switchTab(tab) {
+    document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+    document.getElementById('tabReg').classList.toggle('active',   tab === 'register');
+    document.getElementById('formLogin').style.display    = tab === 'login'    ? '' : 'none';
+    document.getElementById('formRegister').style.display = tab === 'register' ? '' : 'none';
+    hideAuthError();
+  }
+
+  function showAuthError(msg) {
+    const el = document.getElementById('authError');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function hideAuthError() {
+    document.getElementById('authError').style.display = 'none';
+  }
+
+  async function doLogin() {
+    hideAuthError();
+    const user = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    if (!user || !pass) { showAuthError('Inserisci username e password.'); return; }
+
+    const res  = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user, password: pass })
+    });
+    const data = await res.json();
+
+    if (!res.ok) { showAuthError(data.error || 'Errore login.'); return; }
+
+    saveSession(data.token, data.username, data.credits);
+    showApp();
+    syncGameState();
+  }
+
+  async function doRegister() {
+    hideAuthError();
+    const user = document.getElementById('regUser').value.trim();
+    const pass = document.getElementById('regPass').value;
+    if (!user || !pass) { showAuthError('Inserisci username e password.'); return; }
+
+    const res  = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user, password: pass })
+    });
+    const data = await res.json();
+
+    if (!res.ok) { showAuthError(data.error || 'Errore registrazione.'); return; }
+
+    saveSession(data.token, data.username, data.credits);
+    showApp();
+    syncGameState();
+  }
+
+  async function doLogout() {
+    if (token) {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
+      }).catch(() => {});
+    }
+    clearSession();
+    showPage('page-auth');
+  }
+
+  function saveSession(t, u, c) {
+    token    = t;
+    username = u;
+    credits  = c;
+    sessionStorage.setItem('bj_token',    t);
+    sessionStorage.setItem('bj_username', u);
+    sessionStorage.setItem('bj_credits',  c);
+  }
+
+  function clearSession() {
+    token = null; username = ''; credits = 0;
+    sessionStorage.removeItem('bj_token');
+    sessionStorage.removeItem('bj_username');
+    sessionStorage.removeItem('bj_credits');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  NAVIGATION
+  // ═══════════════════════════════════════════════════════════════════
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function showApp() {
+    showPage('page-app');
+    updateNavbar();
+  }
+
+  function updateNavbar() {
+    document.getElementById('navUsername').textContent = username;
+    document.getElementById('navCredits').textContent  = Math.round(credits) + ' chips';
+  }
+
+  function showPanel(name) {
+    document.querySelectorAll('.app-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    document.getElementById('nav' + name.charAt(0).toUpperCase() + name.slice(1))
+            .classList.add('active');
+
+    if (name === 'stats') loadStats();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  BETTING
+  // ═══════════════════════════════════════════════════════════════════
+  function changeBet(delta) {
+    const newBet = currentBet + delta;
+    if (newBet < 10 || newBet > 100) return;
+    if (newBet > credits)            return;
+    currentBet = newBet;
+    document.getElementById('betDisplay').textContent = currentBet;
+  }
+
+  function setBetControlsEnabled(enabled) {
+    document.getElementById('btnBetMinus').disabled = !enabled;
+    document.getElementById('btnBetPlus').disabled  = !enabled;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  GAME BUTTONS
+  // ═══════════════════════════════════════════════════════════════════
+  function setButtonPhase(phase) {
+    const start = document.getElementById('btnStart');
+    const hit   = document.getElementById('btnHit');
+    const stand = document.getElementById('btnStand');
+
+    if (phase === 'playing') {
+      start.classList.add('hidden');
+      hit.classList.remove('hidden');
+      stand.classList.remove('hidden');
+      setBetControlsEnabled(false);
+    } else {
+      start.classList.remove('hidden');
+      hit.classList.add('hidden');
+      stand.classList.add('hidden');
+      setBetControlsEnabled(true);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  CARD RENDERING
+  // ═══════════════════════════════════════════════════════════════════
+  function attachGloss(cardEl) {
+    if (cardEl.classList.contains('back')) return;
+    cardEl.addEventListener('mousemove', e => {
+      const r = cardEl.getBoundingClientRect();
+      cardEl.style.setProperty('--x', ((e.clientX - r.left) / r.width  * 100) + '%');
+      cardEl.style.setProperty('--y', ((e.clientY - r.top)  / r.height * 100) + '%');
+    });
+    cardEl.addEventListener('mouseleave', () => {
+      cardEl.style.setProperty('--x', '50%');
+      cardEl.style.setProperty('--y', '50%');
+    });
+  }
+
+  function renderCards(containerId, imagePaths = [], labels = []) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!imagePaths.length) {
+      const empty = document.createElement('div');
+      empty.className = 'card';
+      empty.textContent = '-';
+      container.appendChild(empty);
+      return;
     }
 
-    /* ── BUTTON PHASE ───────────────────────────────────────────────────
-       "idle"    → solo Start  (prima della partita o dopo game over)
-       "playing" → solo Hit + Stand  (partita in corso)
-    ──────────────────────────────────────────────────────────────────── */
-    function setButtonPhase(phase) {
-      const start = document.getElementById("btnStart");
-      const hit   = document.getElementById("btnHit");
-      const stand = document.getElementById("btnStand");
+    imagePaths.forEach((src, i) => {
+      const label  = labels[i] || '-';
+      const isBack = label === 'Carta coperta' || src.includes('back_side');
+      const card   = document.createElement('div');
 
-      if (phase === "playing") {
-        start.classList.add("hidden");
-        hit.classList.remove("hidden");
-        stand.classList.remove("hidden");
-      } else {
-        start.classList.remove("hidden");
-        hit.classList.add("hidden");
-        stand.classList.add("hidden");
-      }
-    }
-
-    /* ── RENDER CARDS ───────────────────────────────────────────────── */
-    function renderCards(containerId, imagePaths = [], labels = []) {
-      const container = document.getElementById(containerId);
-      if (!container) return;
-
-      container.innerHTML = "";
-
-      if (!imagePaths.length) {
-        const empty = document.createElement("div");
-        empty.className = "card";
-        empty.textContent = "-";
-        container.appendChild(empty);
+      if (isBack) {
+        card.className = 'card back';
+        container.appendChild(card);
         return;
       }
 
-      imagePaths.forEach((src, index) => {
-        const label = labels[index] || "-";
-        const isBackCard =
-          label === "Carta coperta" ||
-          src.includes("back.png") ||
-          src.includes("back_side.png");
-
-        const card = document.createElement("div");
-
-        if (isBackCard) {
-          card.className = "card back";
-          container.appendChild(card);
-          return;
-        }
-
-        card.className = "card";
-
-        const img = document.createElement("img");
-        img.src = src;
-        img.alt = label;
-        img.className = "card-image";
-        img.onerror = function () { card.textContent = ""; };
-
-        card.appendChild(img);
-        container.appendChild(card);
-        attachGlossEffect(card);
-      });
-    }
-
-    /* ── UI UPDATE ──────────────────────────────────────────────────── */
-    function updateUI(state) {
-      renderCards("playerCardsArea", state.playerCardImages || [], state.playerCards || []);
-      renderCards("dealerCardsArea", state.dealerCardImages || [], state.dealerCards || []);
-
-      document.getElementById("playerValue").textContent = state.playerValue ?? 0;
-      document.getElementById("dealerValue").textContent =
-        state.gameOver ? (state.dealerValue ?? 0) : "?";
-
-      document.getElementById("message").textContent =
-        state.message || "Nessun messaggio.";
-
-      // Aggiorna i bottoni in base allo stato ricevuto dal server
-      if (state.started && !state.gameOver) {
-        setButtonPhase("playing");
-      } else {
-        setButtonPhase("idle");
-      }
-    }
-
-    /* ── API CALLS ──────────────────────────────────────────────────── */
-    async function callApi(url, method = "GET") {
-      const response = await fetch(url, { method });
-      const data = await response.json();
-      updateUI(data);
-    }
-
-    async function startGame() { await callApi("/api/game/start", "POST"); }
-    async function hit()       { await callApi("/api/game/hit",   "POST"); }
-    async function stand()     { await callApi("/api/game/stand", "POST"); }
-
-    /* ── ABANDON ON PAGE UNLOAD ─────────────────────────────────────────
-       sendBeacon() è l'unico modo affidabile per fare una richiesta HTTP
-       mentre la pagina si sta chiudendo o aggiornando. fetch() normale
-       verrebbe cancellato dal browser prima di arrivare al server.
-       Il server accetta qualsiasi metodo su /api/game/abandon.
-    ──────────────────────────────────────────────────────────────────── */
-    window.addEventListener("beforeunload", () => {
-      navigator.sendBeacon("/api/game/abandon");
+      card.className = 'card';
+      const img = document.createElement('img');
+      img.src = src; img.alt = label; img.className = 'card-image';
+      img.onerror = () => { card.textContent = ''; };
+      card.appendChild(img);
+      container.appendChild(card);
+      attachGloss(card);
     });
+  }
 
-    /* ── INIT: stato al caricamento ─────────────────────────────────────
-       Legge lo stato corrente dal server appena la pagina si apre.
-       Poiché beforeunload ha già chiamato abandon prima del reload,
-       il server risponderà con una partita terminata o non avviata,
-       quindi l'utente ricomincia sempre da idle dopo un refresh.
-    ──────────────────────────────────────────────────────────────────── */
-    (async function init() {
-      try {
-        const response = await fetch("/api/game/state");
-        if (!response.ok) {
-          setButtonPhase("idle");
-          return;
-        }
-        const data = await response.json();
-        updateUI(data);
-      } catch (e) {
-        setButtonPhase("idle");
+  // ═══════════════════════════════════════════════════════════════════
+  //  UI UPDATE
+  // ═══════════════════════════════════════════════════════════════════
+  function updateUI(state) {
+    renderCards('playerCardsArea', state.playerCardImages || [], state.playerCards || []);
+    renderCards('dealerCardsArea', state.dealerCardImages || [], state.dealerCards || []);
+
+    document.getElementById('playerValue').textContent = state.playerValue ?? 0;
+    document.getElementById('dealerValue').textContent =
+      state.gameOver ? (state.dealerValue ?? 0) : '?';
+
+    document.getElementById('message').textContent =
+      state.message || 'Nessun messaggio.';
+
+    // Aggiorna crediti
+    if (state.credits !== undefined) {
+      credits = state.credits;
+      sessionStorage.setItem('bj_credits', credits);
+      updateNavbar();
+
+      // Clamp la scommessa ai crediti disponibili
+      if (currentBet > credits) {
+        currentBet = Math.max(10, Math.floor(credits / 10) * 10);
+        document.getElementById('betDisplay').textContent = currentBet;
       }
-    })();
+    }
+
+    if (state.started && !state.gameOver) {
+      setButtonPhase('playing');
+    } else {
+      setButtonPhase('idle');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  API CALLS
+  // ═══════════════════════════════════════════════════════════════════
+  function authHeader() {
+    return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+  }
+
+  async function syncGameState() {
+    try {
+      const res = await fetch('/api/game/state', { headers: authHeader() });
+      if (!res.ok) { setButtonPhase('idle'); return; }
+      const data = await res.json();
+      updateUI(data);
+    } catch { setButtonPhase('idle'); }
+  }
+
+  async function startGame() {
+    if (currentBet < 10) {
+      document.getElementById('message').textContent = 'Imposta una scommessa prima di iniziare.';
+      return;
+    }
+    const res  = await fetch('/api/game/start', {
+      method: 'POST',
+      headers: authHeader(),
+      body: JSON.stringify({ bet: currentBet })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById('message').textContent = data.error || 'Errore.';
+      return;
+    }
+    updateUI(data);
+  }
+
+  async function hit() {
+    const res  = await fetch('/api/game/hit', { method: 'POST', headers: authHeader() });
+    const data = await res.json();
+    updateUI(data);
+  }
+
+  async function stand() {
+    const res  = await fetch('/api/game/stand', { method: 'POST', headers: authHeader() });
+    const data = await res.json();
+    updateUI(data);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  STATS
+  // ═══════════════════════════════════════════════════════════════════
+  async function loadStats() {
+    document.getElementById('statsContent').innerHTML =
+      '<div class="stats-loading">Caricamento...</div>';
+
+    try {
+      const res  = await fetch('/api/stats', { headers: authHeader() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      renderStats(data);
+    } catch (e) {
+      document.getElementById('statsContent').innerHTML =
+        '<div class="stats-loading">Errore caricamento statistiche.</div>';
+    }
+  }
+
+  function renderStats(d) {
+    const winRate = d.totale > 0 ? Math.round(d.vittorie / d.totale * 100) : 0;
+
+    const rows = (d.ultimePartite || []).map(p => `
+      <tr>
+        <td>${p.data.replace('T', ' ')}</td>
+        <td><span class="esito-badge esito-${p.esito}">${p.esito}</span></td>
+        <td>${p.punti}</td>
+        <td>${p.scommessa > 0 ? p.scommessa + ' chips' : '—'}</td>
+      </tr>
+    `).join('');
+
+    document.getElementById('statsContent').innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">${Math.round(d.crediti)}</div>
+          <div class="stat-label">Chips totali</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${d.totale}</div>
+          <div class="stat-label">Partite giocate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:#2ec878">${d.vittorie}</div>
+          <div class="stat-label">Vittorie</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:#e05555">${d.sconfitte}</div>
+          <div class="stat-label">Sconfitte</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:#8090e0">${d.pareggi}</div>
+          <div class="stat-label">Pareggi</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${winRate}%</div>
+          <div class="stat-label">Win rate</div>
+        </div>
+      </div>
+
+      <div class="stats-section-title">Ultime partite</div>
+      <div class="zone" style="padding:0;overflow:hidden">
+        ${rows.length ? `
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Data</th><th>Esito</th><th>Punti</th><th>Scommessa</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>` :
+          '<div style="padding:24px;text-align:center;color:var(--text-dim)">Nessuna partita ancora giocata.</div>'
+        }
+      </div>
+    `;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  ABANDON ON UNLOAD
+  // ═══════════════════════════════════════════════════════════════════
+  window.addEventListener('beforeunload', () => {
+    if (token) navigator.sendBeacon('/api/game/abandon',
+      new Blob([JSON.stringify({ token })], { type: 'application/json' }));
+  });
   </script>
 </body>
 </html>

@@ -1,0 +1,440 @@
+<!--Il browser usa fetch() per chiamare le API del backend Java e aggiornare il DOM con i dati JSON. 
+//fetch() è l'approccio standard lato browser per fare richieste HTTP asincrone al server e ricevere risposte JSON. -->
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blackjack V5</title>
+
+  <link rel="icon" type="image/x-icon" href="/logo/blackjack_dark.ico" media="(prefers-color-scheme: light)">
+  <link rel="icon" type="image/x-icon" href="/logo/blackjack_white.ico" media="(prefers-color-scheme: dark)">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #0e1014 0%, #151924 100%);
+      color: #f5f5f5;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: rgba(20, 24, 31, 0.95);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    h1 {
+      margin: 0 0 20px 0;
+      text-align: center;
+      font-size: 32px;
+    }
+
+    .table-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .zone {
+      background: #1d2330;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .zone-row {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .zone-label {
+      min-width: 90px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #d9e2ff;
+    }
+
+    .cards-area {
+      flex: 1;
+      min-height: 110px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+    }
+
+    /* ── CARD BASE ── */
+    .card {
+      position: relative;
+      width: 90px;
+      height: 126px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f3f3f3;
+      padding: 6px;
+      border: none;
+      border-radius: 6px;
+      box-shadow: none;
+      overflow: hidden;
+      --x: 50%;
+      --y: 50%;
+      cursor: default;
+      transition: box-shadow 0.2s ease, transform 0.15s ease;
+    }
+
+    /* ── GLOSS OVERLAY ── */
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background:
+        radial-gradient(
+          ellipse 80px 60px at var(--x) var(--y),
+          rgba(255, 255, 255, 0.45) 0%,
+          transparent 70%
+        ),
+        conic-gradient(
+          from 0deg at var(--x) var(--y),
+          rgba(255, 80,  80,  0.25),
+          rgba(255, 200, 60,  0.25),
+          rgba(80,  255, 120, 0.25),
+          rgba(60,  180, 255, 0.25),
+          rgba(180, 80,  255, 0.25),
+          rgba(255, 80,  80,  0.25)
+        );
+      mix-blend-mode: overlay; /* L'effetto di luce si adatta al colore della carta sottostante */
+      mix-blend-mode: screen; /* Metto l'effetto sui simboli di colore più scuro */
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      z-index: 2;
+    }
+
+    .card:not(.back):hover::after {
+      opacity: 1;
+    }
+
+    .card:not(.back):hover {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255,255,255,0.08);
+    }
+
+    .card-image {
+      width: 83px;
+      height: 119px;
+      object-fit: contain;
+      border-radius: 3px;
+      display: block;
+      position: relative;
+      z-index: 1;
+    }
+
+    #dealerCardsArea .meta-text,
+    #playerCardsArea .meta-text {
+      font-size: 11px;
+      line-height: 1.2;
+      color: #111;
+      opacity: 0.9;
+    }
+
+    .card.back {
+      background-image: url('/assets/back_side.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: transparent;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+    }
+
+    .deck-stack {
+      position: relative;
+      width: 90px;
+      height: 120px;
+      margin-left: auto;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .deck-stack .stack-card {
+      position: absolute;
+      width: 90px;
+      height: 120px;
+      border-radius: 8px;
+      background-image: url('/assets/back_side.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 6px 10px rgba(0,0,0,0.25);
+    }
+
+    .deck-stack .stack-card:nth-child(1) { top: 0;    left: 0; }
+    .deck-stack .stack-card:nth-child(2) { top: 6px;  left: 6px; }
+    .deck-stack .stack-card:nth-child(3) { top: 12px; left: 12px; }
+
+    .score-box {
+      min-width: 80px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      color: #ffd166;
+    }
+
+    .meta-text {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-top: 8px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      background: #2d6cdf;
+      color: white;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    button:hover {
+      background: #1f57b8;
+      transform: translateY(-2px);
+    }
+
+    /* Bottone nascosto: rimosso dal layout, non cliccabile */
+    button.hidden {
+      display: none;
+    }
+
+    .message-box {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: rgba(255, 209, 102, 0.12);
+      color: #ffd166;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      .zone-row { align-items: flex-start; }
+      .deck-stack { margin-left: 0; }
+      .score-box { width: 100%; text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Blackjack V5</h1>
+
+    <div class="table-layout">
+      <section class="zone" id="dealerZone">
+        <div class="zone-row">
+          <div class="zone-label">Dealer</div>
+          <div class="cards-area" id="dealerCardsArea">
+            <div class="card back"></div>
+          </div>
+          <div class="score-box" id="dealerValue">?</div>
+          <div class="deck-stack" title="Mazzo">
+            <div class="stack-card"></div>
+            <div class="stack-card"></div>
+            <div class="stack-card"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="zone" id="playerZone">
+        <div class="zone-row">
+          <div class="zone-label">P1</div>
+          <div class="cards-area" id="playerCardsArea">
+            <div class="card">-</div>
+          </div>
+          <div class="score-box" id="playerValue">0</div>
+        </div>
+      </section>
+
+      <div class="controls">
+        <!-- Bottoni dinamici: solo uno dei due gruppi è visibile per volta -->
+        <button id="btnStart" onclick="startGame()">Start</button>
+        <button id="btnHit"   onclick="hit()"   class="hidden">Hit</button>
+        <button id="btnStand" onclick="stand()" class="hidden">Stand</button>
+      </div>
+
+      <div class="message-box" id="message">Premi Start per iniziare.</div>
+    </div>
+  </div>
+
+  <script>
+    /* ── GLOSS EFFECT ───────────────────────────────────────────────── */
+    function attachGlossEffect(cardEl) {
+      if (cardEl.classList.contains("back")) return;
+
+      cardEl.addEventListener("mousemove", (e) => {
+        const rect = cardEl.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width)  * 100;
+        const y = ((e.clientY - rect.top)  / rect.height) * 100;
+        cardEl.style.setProperty("--x", `${x}%`);
+        cardEl.style.setProperty("--y", `${y}%`);
+      });
+
+      cardEl.addEventListener("mouseleave", () => {
+        cardEl.style.setProperty("--x", "50%");
+        cardEl.style.setProperty("--y", "50%");
+      });
+    }
+
+    /* ── BUTTON PHASE ───────────────────────────────────────────────────
+       "idle"    → solo Start  (prima della partita o dopo game over)
+       "playing" → solo Hit + Stand  (partita in corso)
+    ──────────────────────────────────────────────────────────────────── */
+    function setButtonPhase(phase) {
+      const start = document.getElementById("btnStart");
+      const hit   = document.getElementById("btnHit");
+      const stand = document.getElementById("btnStand");
+
+      if (phase === "playing") {
+        start.classList.add("hidden");
+        hit.classList.remove("hidden");
+        stand.classList.remove("hidden");
+      } else {
+        start.classList.remove("hidden");
+        hit.classList.add("hidden");
+        stand.classList.add("hidden");
+      }
+    }
+
+    /* ── RENDER CARDS ───────────────────────────────────────────────── */
+    function renderCards(containerId, imagePaths = [], labels = []) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      container.innerHTML = "";
+
+      if (!imagePaths.length) {
+        const empty = document.createElement("div");
+        empty.className = "card";
+        empty.textContent = "-";
+        container.appendChild(empty);
+        return;
+      }
+
+      imagePaths.forEach((src, index) => {
+        const label = labels[index] || "-";
+        const isBackCard =
+          label === "Carta coperta" ||
+          src.includes("back.png") ||
+          src.includes("back_side.png");
+
+        const card = document.createElement("div");
+
+        if (isBackCard) {
+          card.className = "card back";
+          container.appendChild(card);
+          return;
+        }
+
+        card.className = "card";
+
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = label;
+        img.className = "card-image";
+        img.onerror = function () { card.textContent = ""; };
+
+        card.appendChild(img);
+        container.appendChild(card);
+        attachGlossEffect(card);
+      });
+    }
+
+    /* ── UI UPDATE ──────────────────────────────────────────────────── */
+    function updateUI(state) {
+      renderCards("playerCardsArea", state.playerCardImages || [], state.playerCards || []);
+      renderCards("dealerCardsArea", state.dealerCardImages || [], state.dealerCards || []);
+
+      document.getElementById("playerValue").textContent = state.playerValue ?? 0;
+      document.getElementById("dealerValue").textContent =
+        state.gameOver ? (state.dealerValue ?? 0) : "?";
+
+      document.getElementById("message").textContent =
+        state.message || "Nessun messaggio.";
+
+      // Aggiorna i bottoni in base allo stato ricevuto dal server
+      if (state.started && !state.gameOver) {
+        setButtonPhase("playing");
+      } else {
+        setButtonPhase("idle");
+      }
+    }
+
+    /* ── API CALLS ──────────────────────────────────────────────────── */
+    async function callApi(url, method = "GET") {
+      const response = await fetch(url, { method });
+      const data = await response.json();
+      updateUI(data);
+    }
+
+    async function startGame() { await callApi("/api/game/start", "POST"); }
+    async function hit()       { await callApi("/api/game/hit",   "POST"); }
+    async function stand()     { await callApi("/api/game/stand", "POST"); }
+
+    /* ── ABANDON ON PAGE UNLOAD ─────────────────────────────────────────
+       sendBeacon() è l'unico modo affidabile per fare una richiesta HTTP
+       mentre la pagina si sta chiudendo o aggiornando. fetch() normale
+       verrebbe cancellato dal browser prima di arrivare al server.
+       Il server accetta qualsiasi metodo su /api/game/abandon.
+    ──────────────────────────────────────────────────────────────────── */
+    window.addEventListener("beforeunload", () => {
+      navigator.sendBeacon("/api/game/abandon");
+    });
+
+    /* ── INIT: stato al caricamento ─────────────────────────────────────
+       Legge lo stato corrente dal server appena la pagina si apre.
+       Poiché beforeunload ha già chiamato abandon prima del reload,
+       il server risponderà con una partita terminata o non avviata,
+       quindi l'utente ricomincia sempre da idle dopo un refresh.
+    ──────────────────────────────────────────────────────────────────── */
+    (async function init() {
+      try {
+        const response = await fetch("/api/game/state");
+        if (!response.ok) {
+          setButtonPhase("idle");
+          return;
+        }
+        const data = await response.json();
+        updateUI(data);
+      } catch (e) {
+        setButtonPhase("idle");
+      }
+    })();
+  </script>
+</body>
+</html>

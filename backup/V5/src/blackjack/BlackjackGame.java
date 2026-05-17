@@ -1,0 +1,217 @@
+package blackjack;
+
+// logica del gioco
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class BlackjackGame {
+    private Deck deck;
+    private Hand playerHand;
+    private Hand dealerHand;
+    private boolean gameOver;
+    private boolean started;
+    private String message;
+
+    private final DatabaseManager dbManager = new DatabaseManager();
+
+    public BlackjackGame() {
+        started = false;
+        gameOver = false;
+        message = "";
+    }
+
+    /**
+     * Restituisce true se la partita è attiva e non ancora terminata.
+     * Usato da ServerMain per bloccare chiamate /start premature.
+     */
+    public boolean isInProgress() {
+        return started && !gameOver;
+    }
+
+    public GameState startGame() {
+        deck = new Deck();
+        playerHand = new Hand();
+        dealerHand = new Hand();
+        gameOver = false;
+        started = true;
+        message = "Partita iniziata.";
+
+        playerHand.addCard(deck.drawCard());
+        dealerHand.addCard(deck.drawCard());
+        playerHand.addCard(deck.drawCard());
+        dealerHand.addCard(deck.drawCard());
+
+        if (playerHand.getValue() == 21) {
+            gameOver = true;
+            message = "Blackjack! Hai vinto!";
+        }
+
+        return buildState(false);
+    }
+
+    public GameState playerHit() {
+        checkStarted();
+
+        if (gameOver) {
+            return buildState(true);
+        }
+
+        playerHand.addCard(deck.drawCard());
+
+        if (playerHand.isBust()) {
+            gameOver = true;
+            message = "Hai sballato! Hai perso.";
+            
+            dbManager.salvaPartita("LOSE", playerHand.getValue(), dealerHand.getValue(), false);
+            
+            return buildState(true);
+        }
+
+        if (playerHand.getValue() == 21) {
+            message = "Hai fatto 21. Ora puoi stare.";
+        } else {
+            message = "Hai pescato una carta.";
+        }
+
+        return buildState(false);
+    }
+
+    public GameState playerStand() {
+        checkStarted();
+
+        if (gameOver) {
+            return buildState(true);
+        }
+
+        while (dealerHand.getValue() < 17) {
+            dealerHand.addCard(deck.drawCard());
+        }
+
+        gameOver = true;
+
+        int playerValue = playerHand.getValue();
+        int dealerValue = dealerHand.getValue();
+
+        if (dealerHand.isBust()) {
+            message = "Il dealer ha sballato. Hai vinto!";
+        } else if (playerValue > dealerValue) {
+            message = "Hai vinto!";
+        } else if (playerValue < dealerValue) {
+            message = "Hai perso!";
+        } else {
+            message = "Pareggio!";
+        }
+
+        // Salva la partita nel database
+        String esito = determineOutcome();   // vedi sotto
+        dbManager.salvaPartita(esito, playerHand.getValue(), dealerHand.getValue(), false);
+
+
+        return buildState(true);
+    }
+
+    private String determineOutcome() {
+        // Metodo helper per calcolare l'esito dal punto di vista del giocatore, da salvare nel DB
+        int playerVal = playerHand.getValue();
+        int dealerVal = dealerHand.getValue();
+
+        if (playerVal > 21) return "LOSE";
+        if (dealerVal > 21) return "WIN";
+        if (playerVal > dealerVal) return "WIN";
+        if (playerVal < dealerVal) return "LOSE";
+        return "DRAW";
+    }
+
+
+    /**
+     * Chiamato quando il client abbandona la pagina (beforeunload).
+     * Se la partita era in corso il dealer vince per abbandono.
+     * Se non era in corso non fa niente di distruttivo.
+     */
+    public GameState abandonGame() {
+        if (!started || gameOver) {
+            // Nessuna partita attiva: restituisce stato neutro
+            GameState empty = new GameState();
+            empty.setStarted(false);
+            empty.setGameOver(true);
+            empty.setMessage("Nessuna partita in corso.");
+            return empty;
+        }
+
+        // Partita in corso: il dealer vince per abbandono
+        // Il dealer pesca fino a 17+ per mostrare uno stato realistico
+        while (dealerHand.getValue() < 17) {
+            dealerHand.addCard(deck.drawCard());
+        }
+
+        gameOver = true;
+        message = "Partita abbandonata. Vince il dealer.";
+
+        String esito = "LOSE";  // dal punto di vista del giocatore, l'abbandono è sempre una sconfitta
+        dbManager.salvaPartita(esito, playerHand.getValue(), dealerHand.getValue(), true);
+
+        return buildState(true);
+    }
+
+    public GameState getState() {
+        if (!started) {
+            // Partita non ancora avviata: stato iniziale pulito
+            GameState empty = new GameState();
+            empty.setStarted(false);
+            empty.setGameOver(false);
+            empty.setMessage("Premi Start per iniziare.");
+            return empty;
+        }
+        return buildState(gameOver);
+    }
+
+    private void checkStarted() {
+        if (!started) {
+            throw new IllegalStateException("La partita non è stata ancora avviata.");
+        }
+    }
+
+    private GameState buildState(boolean revealDealer) {
+        GameState state = new GameState();
+
+        List<String> playerCards = playerHand.getCards()
+                .stream()
+                .map(Card::getDisplayName)
+                .collect(Collectors.toList());
+
+        List<String> playerCardImages = playerHand.getCards()
+                .stream()
+                .map(Card::getImagePath)
+                .collect(Collectors.toList());
+
+        state.setPlayerCards(playerCards);
+        state.setPlayerCardImages(playerCardImages);
+        state.setPlayerValue(playerHand.getValue());
+        state.setGameOver(gameOver);
+        state.setStarted(started);
+        state.setMessage(message);
+
+        if (revealDealer) {
+            List<String> dealerCards = dealerHand.getCards()
+                    .stream()
+                    .map(Card::getDisplayName)
+                    .collect(Collectors.toList());
+
+            List<String> dealerCardImages = dealerHand.getCards()
+                    .stream()
+                    .map(Card::getImagePath)
+                    .collect(Collectors.toList());
+
+            state.setDealerCards(dealerCards);
+            state.setDealerCardImages(dealerCardImages);
+            state.setDealerValue(dealerHand.getValue());
+        } else {
+            state.setDealerCards(List.of("Carta coperta"));
+            state.setDealerCardImages(List.of("/assets/back_side.png"));
+            state.setDealerValue(0);
+        }
+
+        return state;
+    }
+}

@@ -13,6 +13,8 @@ public class BlackjackGame {
     private boolean started;
     private String message;
 
+    private final DatabaseManager dbManager = new DatabaseManager();
+
     public BlackjackGame() {
         started = false;
         gameOver = false;
@@ -60,6 +62,9 @@ public class BlackjackGame {
         if (playerHand.isBust()) {
             gameOver = true;
             message = "Hai sballato! Hai perso.";
+            
+            dbManager.salvaPartita("LOSE", playerHand.getValue(), dealerHand.getValue(), false);
+            
             return buildState(true);
         }
 
@@ -98,8 +103,26 @@ public class BlackjackGame {
             message = "Pareggio!";
         }
 
+        // Salva la partita nel database
+        String esito = determineOutcome();   // vedi sotto
+        dbManager.salvaPartita(esito, playerHand.getValue(), dealerHand.getValue(), false);
+
+
         return buildState(true);
     }
+
+    private String determineOutcome() {
+        // Metodo helper per calcolare l'esito dal punto di vista del giocatore, da salvare nel DB
+        int playerVal = playerHand.getValue();
+        int dealerVal = dealerHand.getValue();
+
+        if (playerVal > 21) return "LOSE";
+        if (dealerVal > 21) return "WIN";
+        if (playerVal > dealerVal) return "WIN";
+        if (playerVal < dealerVal) return "LOSE";
+        return "DRAW";
+    }
+
 
     /**
      * Chiamato quando il client abbandona la pagina (beforeunload).
@@ -124,6 +147,9 @@ public class BlackjackGame {
 
         gameOver = true;
         message = "Partita abbandonata. Vince il dealer.";
+
+        String esito = "LOSE";  // dal punto di vista del giocatore, l'abbandono è sempre una sconfitta
+        dbManager.salvaPartita(esito, playerHand.getValue(), dealerHand.getValue(), true);
 
         return buildState(true);
     }

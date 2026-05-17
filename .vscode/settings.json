@@ -1,0 +1,9 @@
+{
+  "java.project.referencedLibraries": [
+    "Blackjack/lib/**/*.jar"
+  ],
+  "java.project.sourcePaths": [
+    "Blackjack/src"
+  ],
+  "java.project.outputPath": "Blackjack/bin"
+}

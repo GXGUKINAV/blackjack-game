@@ -30,8 +30,18 @@ public class ServerMain {
         server.createContext("/api/game/state",    exchange -> handleApi(exchange, "state"));
         server.createContext("/api/game/abandon",  exchange -> handleApi(exchange, "abandon"));
 
+        // Creo contesto per il logo, così posso servirlo da /logo/blackjack_dark.png e /logo/blackjack_white.png
+        server.createContext("/logo/", ServerMain::handleStaticLogo);
+
         server.setExecutor(null);
         server.start();
+
+        // Debug: verifica che i file siano raggiungibili dal percorso previsto        
+        // System.out.println("USER DIR = " + System.getProperty("user.dir"));
+        // System.out.println("INDEX = " + Paths.get("Blackjack/web/index.html").toAbsolutePath());
+        // System.out.println("LOGO = " + Paths.get("Blackjack/web/logo/blackjack_dark.ico").toAbsolutePath());
+
+        // System.out.println("LOGO URL test: http://localhost:" + PORT + "/logo/blackjack_dark.ico");
 
         System.out.println("Server HTTP avviato su http://localhost:" + PORT);
     }
@@ -55,6 +65,28 @@ public class ServerMain {
         String requestPath = exchange.getRequestURI().getPath();
         String relativePath = requestPath.replaceFirst("/assets/", "");
         java.nio.file.Path filePath = Paths.get("Blackjack/web/assets", relativePath);
+
+        if (!Files.exists(filePath) || Files.isDirectory(filePath)) {
+            sendResponse(exchange, 404, "File non trovato", "text/plain");
+            return;
+        }
+
+        String contentType = guessContentType(filePath.toString());
+        byte[] fileBytes = Files.readAllBytes(filePath);
+
+        exchange.getResponseHeaders().set("Content-Type", contentType);
+        exchange.sendResponseHeaders(200, fileBytes.length);
+
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(fileBytes);
+        }
+    }
+
+    // Per il logo
+    private static void handleStaticLogo(HttpExchange exchange) throws IOException {
+        String requestPath = exchange.getRequestURI().getPath();
+        String relativePath = requestPath.replaceFirst("/logo/", "");
+        java.nio.file.Path filePath = Paths.get("Blackjack/web/logo", relativePath);
 
         if (!Files.exists(filePath) || Files.isDirectory(filePath)) {
             sendResponse(exchange, 404, "File non trovato", "text/plain");

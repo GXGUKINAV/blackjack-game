@@ -28,7 +28,6 @@ public class ServerMain {
     // Dati della sessione utente
     private static class PlayerSession {
         int    playerId;
-        @SuppressWarnings("unused")  
         String username;
         double credits;
 
@@ -44,8 +43,6 @@ public class ServerMain {
 
         // Pagina e asset statici
         server.createContext("/",        ServerMain::handleIndex);
-        server.createContext("/style.css", ServerMain::handleStyle);  // Context per il file CSS
-        server.createContext("/blackjack.js", ServerMain::handleJS);  // Context per il file JavaScript
         server.createContext("/assets/", ServerMain::handleStaticAssets);
         server.createContext("/logo/",   ServerMain::handleStaticLogo);
 
@@ -67,9 +64,7 @@ public class ServerMain {
 
         server.setExecutor(null);
         server.start();
-
-        String ip = java.net.InetAddress.getLocalHost().getHostAddress();
-        System.out.println("Server HTTP avviato su http://" + ip + ":" + PORT);
+        System.out.println("Server HTTP avviato su http://localhost:" + PORT);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -321,28 +316,6 @@ public class ServerMain {
         try (OutputStream os = exchange.getResponseBody()) { os.write(fileBytes); }
     }
 
-    private static void handleStyle(HttpExchange exchange) throws IOException {
-        if (!exchange.getRequestMethod().equalsIgnoreCase("GET")) {
-            sendResponse(exchange, 405, "Metodo non consentito", "text/plain");
-            return;
-        }
-        byte[] fileBytes = Files.readAllBytes(Paths.get("Blackjack/web/style.css"));
-        exchange.getResponseHeaders().set("Content-Type", "text/css; charset=UTF-8");
-        exchange.sendResponseHeaders(200, fileBytes.length);
-        try (OutputStream os = exchange.getResponseBody()) { os.write(fileBytes); }
-    }
-
-    private static void handleJS(HttpExchange exchange) throws IOException {
-        if (!exchange.getRequestMethod().equalsIgnoreCase("GET")) {
-            sendResponse(exchange, 405, "Metodo non consentito", "text/plain");
-            return;
-        }
-        byte[] fileBytes = Files.readAllBytes(Paths.get("Blackjack/web/blackjack.js"));
-        exchange.getResponseHeaders().set("Content-Type", "application/javascript; charset=UTF-8");
-        exchange.sendResponseHeaders(200, fileBytes.length);
-        try (OutputStream os = exchange.getResponseBody()) { os.write(fileBytes); }
-    }
-
     private static void handleStaticAssets(HttpExchange exchange) throws IOException {
         serveStaticFile(exchange,
             exchange.getRequestURI().getPath().replaceFirst("/assets/", ""),
@@ -470,7 +443,6 @@ public class ServerMain {
         if (lower.endsWith(".css"))  return "text/css; charset=UTF-8";
         if (lower.endsWith(".js"))   return "application/javascript; charset=UTF-8";
         if (lower.endsWith(".html")) return "text/html; charset=UTF-8";
-        if (lower.endsWith(".css")) return "text/css; charset=UTF-8";
         if (lower.endsWith(".ico"))  return "image/x-icon";
         return "application/octet-stream";
     }

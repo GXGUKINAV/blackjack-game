@@ -48,4 +48,4 @@ Gioca usando Hit o Stand, guarda le statistiche crescere!
 
 Il progetto mantiene una struttura pulita tra logica di gioco, API REST, database e interfaccia grafica, pronto per futuro sviluppo.
 
-Versione corrente: V6.1.0 - Stack: Java + MySQL + HTML/CSS/JS
+Versione corrente: V6.2.0 - Stack: Java + MySQL + HTML/CSS/JS

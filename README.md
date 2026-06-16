@@ -33,7 +33,7 @@ V4-V4.1: Carte complete in immagini, effetti glossy, gestione stato partita
 
 V5: Integrazione database MySQL per persistenza dati
 
-V6.0.0: Login, scommesse, statistiche e navigazione multi-schermata completi
+V6-V6.2: Login, scommesse, statistiche e navigazione multi-schermata completi, Responsive Mobile e Fix Logica Dealer
 
 Come iniziare
 Avvia il server Java (backend HTTP su localhost:6767)
@@ -48,4 +48,4 @@ Gioca usando Hit o Stand, guarda le statistiche crescere!
 
 Il progetto mantiene una struttura pulita tra logica di gioco, API REST, database e interfaccia grafica, pronto per futuro sviluppo.
 
-Versione corrente: V6.1.0 - Stack: Java + MySQL + HTML/CSS/JS
+Versione corrente: V6.2.0 - Stack: Java + MySQL + HTML/CSS/JS

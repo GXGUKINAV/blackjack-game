@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blackjack V6.2</title>
+
+  <link rel="icon" type="image/x-icon" href="/logo/blackjack_dark.ico" media="(prefers-color-scheme: light)">
+  <link rel="icon" type="image/x-icon" href="/logo/blackjack_white.ico" media="(prefers-color-scheme: dark)">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!--CSS -->
+  <link rel="stylesheet" href="style.css" >
+
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PAGE: AUTH (login / register)
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="page-auth" class="page active">
+    <div class="auth-box">
+      <div class="auth-logo">
+        <img src="/logo/Blackjack_yellow.png" alt="Blackjack logo"
+             style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;">
+        <h1>BLACKJACK</h1>
+      </div>
+
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Accedi</div>
+        <div class="auth-tab"        id="tabReg"   onclick="switchTab('register')">Registrati</div>
+      </div>
+
+      <div id="formLogin">
+        <div class="auth-field">
+          <label>Username</label>
+          <input type="text" id="loginUser" placeholder="Il tuo username" autocomplete="username"
+                 onkeydown="if(event.key==='Enter') doLogin()">
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"
+                 onkeydown="if(event.key==='Enter') doLogin()">
+        </div>
+        <button class="btn-primary" onclick="doLogin()">Entra</button>
+      </div>
+
+      <div id="formRegister" style="display:none">
+        <div class="auth-field">
+          <label>Username</label>
+          <input type="text" id="regUser" placeholder="Scegli un username" autocomplete="username"
+                 onkeydown="if(event.key==='Enter') doRegister()">
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" id="regPass" placeholder="••••••••" autocomplete="new-password"
+                 onkeydown="if(event.key==='Enter') doRegister()">
+        </div>
+        <button class="btn-primary" onclick="doRegister()">Crea Account</button>
+      </div>
+
+      <div class="auth-error" id="authError"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PAGE: APP (navbar + game/stats panels)
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="page-app" class="page">
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <span class="navbar-brand">BJ V6.2</span>
+      <div class="nav-links">
+        <button class="nav-link active" id="navGame" onclick="showPanel('game')">
+          <span class="nav-icon">🃏</span>
+          <span class="nav-text">Gioca</span>
+        </button>
+
+        <button class="nav-link" id="navStats" onclick="showPanel('stats')">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">Statistiche</span>
+        </button>
+      </div>
+      <div class="navbar-user">
+        <span class="navbar-credits" id="navCredits">— chips</span>
+        <span class="navbar-username" id="navUsername"></span>
+        <button class="btn-logout" onclick="doLogout()">Esci</button>
+      </div>
+    </nav>
+
+    <!-- GAME PANEL -->
+    <div class="app-panel active" id="panel-game">
+      <div class="game-wrap">
+        <div class="table-layout">
+
+          <!-- Dealer zone -->
+          <section class="zone" id="dealerZone">
+            <div class="zone-row">
+              <div class="zone-label">Dealer</div>
+              <div class="cards-area" id="dealerCardsArea">
+                <div class="card back"></div>
+              </div>
+              <div class="score-box" id="dealerValue">?</div>
+              <!-- Deck stack -->
+              <div class="deck-stack" title="Mazzo">
+                <div class="stack-card"></div>
+                <div class="stack-card"></div>
+                <div class="stack-card"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Player zone -->
+          <section class="zone" id="playerZone">
+            <div class="zone-row">
+              <div class="zone-label">Player</div>
+              <div class="cards-area" id="playerCardsArea">
+                <div class="card">-</div>
+              </div>
+              <div class="score-box" id="playerValue">0</div>
+            </div>
+          </section>
+
+          <!-- Bet zone -->
+          <div class="bet-zone" id="betZone">
+            <span class="bet-label">Scommessa</span>
+            <div class="bet-controls">
+              <button class="bet-btn" id="btnBetMinus" onclick="changeBet(-10)">−</button>
+              <div>
+                <div class="bet-display" id="betDisplay">10</div>
+                <div class="bet-sublabel">chips</div>
+              </div>
+              <button class="bet-btn" id="btnBetPlus" onclick="changeBet(+10)">+</button>
+            </div>
+            <!-- Chip stack decorativo -->
+            <div class="chip-stack" title="Chips">
+              <div class="chip"><img class="chip-logo" src="/logo/Blackjack_yellow.png" alt="chip"></div>
+              <div class="chip"><img class="chip-logo" src="/logo/Blackjack_yellow.png" alt="chip"></div>
+              <div class="chip"><img class="chip-logo" src="/logo/Blackjack_yellow.png" alt="chip"></div>
+            </div>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="controls">
+            <button class="game-btn" id="btnStart" onclick="startGame()">Start</button>
+            <button class="game-btn hidden" id="btnHit"   onclick="hit()">Hit</button>
+            <button class="game-btn hidden" id="btnStand" onclick="stand()">Stand</button>
+          </div>
+
+          <!-- Message -->
+          <div class="message-box" id="message">Imposta la scommessa e premi Start.</div>
+
+        </div><!-- /table-layout -->
+      </div><!-- /game-wrap -->
+    </div><!-- /panel-game -->
+
+    <!-- STATS PANEL -->
+    <div class="app-panel" id="panel-stats">
+      <div class="stats-wrap">
+        <div class="stats-title">Le tue statistiche</div>
+        <div id="statsContent">
+          <div class="stats-loading">Caricamento...</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-app -->
+  <script src="blackjack.js" defer></script> <!-- defer significa che lo script viene caricato in background, dopo che HTML è stato caricato -->
+</body>
+</html>

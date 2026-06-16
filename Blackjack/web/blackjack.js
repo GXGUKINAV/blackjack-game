@@ -2,7 +2,7 @@
 // Gestisce autenticazione, navigazione, interazione con i bottoni di gioco, rendering delle carte e comunicazione con il server tramite API REST.
 
 // Mettere IP locale se si accede da browser sullo stesso PC, altrimenti IP della macchina sulla rete locale (es. 192.168.1.x)
-const SERVER = 'http://192.168.1.104:6767';  
+const SERVER = 'http://79.21.133.168:6767';  
 
 
 // ═══════════════════════════════════════════════════════════════════
